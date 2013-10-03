@@ -1,4 +1,5 @@
 #!~/virtualenv-1.10/myVE/bin/python
+
 from threading import Thread
 from pymongo import Connection, GEO2D
 from random import shuffle
@@ -8,7 +9,6 @@ import os
 import pymongo
 from pymongo import MongoClient
 import logging
-import time
 
 from flask.ext.httpauth import HTTPBasicAuth
 import json
@@ -17,9 +17,6 @@ from bson.json_util import dumps
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
-night = False
-daynightthread = positionthread = None
-
 
 
 def getpassword(username):
@@ -57,10 +54,9 @@ class Game():
       self.smellrange = 10
       self.daylength = 10
       self.positionfrequency = 5
-      self.counter = 0
+
 
    def instantiate_db(self):
-      self.running = True
       self.client = MongoClient()
       self.db = self.client.werewolf_db
       db = Connection().geo_example
@@ -71,38 +67,9 @@ class Game():
       self.players.remove()
       self.kills.remove() 
       self.db_up = True
+    
 
-
-def startnight():
-   game.night = True
-   game.kills.remove() #remove the last night's kills from the database
-
-   #do all the overnight stuff, that actually happens right before another day starts.
-
-
-def startday():
-   time.sleep(3)
-   game.night = False
-   poll()  #kill the voted-out player
-   #notify the players about the kills?
-
-def maintain():
-   #game starts out as daytime
-   while game.running:
-      #should check every few minutes for the last time players updated their location.
-      
-      time.sleep(3)
-      game.counter += 1
-      startnight()
-      print "night started"
-      time.sleep(3)
-      startday()
-      print "day started"
-
-
-
-
-
+game = Game()
 
 #returns false if that user is already in the database and isn't added.
 def add_user(username, password):
@@ -152,7 +119,6 @@ def kill(victimName):
 
 def inKillRange(killerid, victimid):
    for player in game.players.find( { "loc" : {"$near" : game.players.find_one({"name" : game.currentuser})}}).limit(game.killrange):
-
       if player["_id"] == vitimid:
             return true
    return false
@@ -161,7 +127,7 @@ def allplayers():
    return simplifyplayers( list(game.players.find()) )
 
 def smell():
-   return simplifyplayers( list (game.players.find( { "loc" : {"$near" : game.players.find_one({"name" : game.currentuser})}}).limit(game.smellrange)))
+   return simplifyplayers( list (game.players.find( { "loc" : {"$near" : game.players.find_one({"name" : game.currentuser})}}).limit(game.smellrange))
 
 
 def simplifyplayers(playerlist):
@@ -245,39 +211,56 @@ def synopsis():
 
 def insertplayer(userid, username, werewolf):
    game.players.insert( {"id" : userid, "name" : username, "werewolf" : werewolf, 
-      "alive" : True, "loc" : [game.lon, game.lat], "image" : None ,
+      "alive" : True, "loc" : [game.lon, game.lat]}, "image" : None ,
       'kills' : 0, "votedfor" : "", 'votesagainst' : 0 } )
 
 
-# checks that the player last updated his position recently.
+def startnight():
+   game.night = True
+   game.kills.remove() #remove the last night's kills from the database
+
+   #do all the overnight stuff, that actually happens right before another day starts.
+
+def startday():
+   game.night = False
+   poll()  #kill the voted-out player
+   #notify the players about the kills?
+
+def maintain():
+   #game starts out as daytime
+   while game.running:
+      #should check every few minutes for the last time players updated their location.
+
+      time.sleep(game.daylength)
+      startnight()
+      time.spleep(game.daylength)
+      startday()
+
+
 def checkpositions():
-   pass
 
    
 
 
 def newgame():
-
-   game.instantiate_db()
-
-
    #clear out the players and kills collections
-   daynightthread = Thread(target=maintain)
+   daynightthread = Thread(target = maintain)
    daynightthread.start()
-
-#   positionthread = Thread(target = checkpositions, args=[])
-#   positionthread.start()
+   positionthread = Thread(target = checkpositions)
+   positionthread.start()
    running = False
 
    db_up = False
    players = users = kills = db = None
  
+   game.instantiate_db()
    
    usercount = playercount = 0
 
    add_user("mike", "1234")
    add_user("allevato", "allevato")
 
+   game.running = True
    count = 0
    users = list(game.users.find())
    shuffle(users)
@@ -407,26 +390,8 @@ def debugusers():
 def getuser(username):
    return dumps ( {'user' : game.users.find_one( {"name" : username} ) } )
 
-@app.route("/debug")
-def debug():
-   return dumps ( {'Night' : game.night, 'counter' : game.counter })
-
-@app.route("/switch")
-def switch():
-   if game.night:
-      startday()
-   else:
-      startnight()
-   return dumps ( {'Night' : game.night, 'counter' : game.counter })
-
-
-game = Game()
-
 if __name__ == "__main__":
    app.run()
-   game.running = False
-   
-#teardown_appcontext(error=None):
 
 
 
