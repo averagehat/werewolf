@@ -1,6 +1,5 @@
 #!~/virtualenv-1.10/myVE/bin/python
-from functools import wraps
-from flask import g, request, redirect, url_for
+
 import hashlib
 from threading import Thread
 from pymongo import Connection, GEO2D
@@ -27,17 +26,12 @@ import json
 from bson import Binary, Code
 from bson.json_util import dumps
 
-from flask.ext.wtf import Form
-from wtforms import TextField, BooleanField
-from wtforms.validators import Required
-
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 night = False
 daynightthread = positionthread = None
-#login_manager = LoginManager()
-#login_manager.init_app(app)
-
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 
 class Game():
@@ -72,8 +66,6 @@ class Game():
     #  game.users.insert( {"name" : self.sudo, "password" : hashpassword(self.sudo) , "id" : self.usercount, "admin" : True })
       self.usercount += 1
 
-
-
 class User():
    def __init__(self, username, hashedpass, id0, isadmin, active=True, password=None):
       self.username = username
@@ -100,27 +92,11 @@ class User():
    def validpassword(self, password):
       return checkpassword(password, self.password)
 
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
-   if not request.json or not 'username' in request.json or not 'password' in request.json:
-      abort(400)
-  # user = User(request.json['username'], hashpassword(request.json['username'] + request.json['password']), id0=0, isadmin=False)
-   print request.json['username']
-   print request.json['password']
-   jname = unicode(str(request.json['username']), 'latin1')
-   jpassword = unicode(str(request.json['password']), 'latin1')
-   print 'at if'
-   if game.users.find_one( {'name' : jname, 'password' : hashpassword(jname + jpassword) }):
-      print 'in if'
-      game.currentuser = jname
-      return dumps( {'result' : 'login successful!' })
-   else:
-      print 'in else'
-      redirect('/login_required')
-    #user = game.users.find_one( {'username' : form.username.data} )
-    #return "yo there"
-   
-   ''' 
+    form = LoginForm()
+    user = game.users.find_one( {'username' : form.username.data} )
+       
     if form.validate_on_submit():
         # login and validate the user...
 
@@ -133,21 +109,21 @@ def login():
           flash('Wrong username or password!', 'error')
 
     return render_template("login.html", form=form)  
-   '''
+
+@login_manager.user_loader
 def load_user(userid):
-   u = game.users.find_one( {"id" : userid })
+   uform = game.users.find_one( {"id" : userid })
    return User(u['name'], userid, u['admin'], active=True)
 
-##########
+def getpassword(username):
+   theuser = game.users.find_one( { 'name' : username } )
 
+   if 'password' in theuser:
+      game.currentuser = username
+      return theuser['password']
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if game.currentuser is None:
-            return redirect('login')#      url_for('login', next=request.url))
-        return f(*args, **kwargs)
-    return decorated_function
+   else:
+      return None
 
 @auth.get_password
 def get_password(username):
@@ -165,9 +141,6 @@ def startnight():
 
    #do all the overnight stuff, that actually happens right before another day starts.
 
-def isadmin(playername):
-   userdict = users.find_one( {"name" : playername }
-   return userdict['admin']
 
 def startday():
    time.sleep(3)
@@ -269,7 +242,6 @@ def simplify(playerdict):
    return { "name" : playerdict['name'], 'alive' : playerdict['alive'] }
 
 
-
 def poll():
    liveplayers = game.players.find( {'alive' : True } )
    
@@ -297,7 +269,6 @@ def poll():
       dokill(mostvotes['name'], {"method" : 'voting', 'votes' : max} )
   
   # if no one votes, no one dies   
-
 
 
       #info should include stuff like method, killer
@@ -420,33 +391,22 @@ class BasicPlayer:
       self.name = playerObj.name
       self.alive = playerObl.alive
 
-def new_game():
-   if isadmin(game.currentuser):
-      newgame()
-      return dumps( {"result" : "Game Created!" } )
 
-   else:
-      return False
 # We use https:// so we don't need a login page
 
 #game = GameFactor.getCurrentGame   ??
 #regularly scheduled check that players have updated location recently
 
-@app.route("/login_required")
-def loginrequired():
-   return dumps( {"result" : "Login requered at /login"} )
-
 @app.route("/")
 def home():
-   return "Welcome to werewolf,\nLogin at /login to play.\n"
+   return "Welcome to werewolf,\n"
 
 @app.route("/players")
-@login_required
 def allPlayers():
    return dumps(({'players' : allplayers()}))
 
 @app.route("/werewolf/smell")
-@login_required
+@auth.login_required
    #return a list of all players within the scent range
 def smell():
    return dumps ( {'response' : "login successful\n" } )
@@ -464,19 +424,16 @@ def akill(victim):
    #use ID to attempt a kill a player
 
 @app.route("/townie/vote/<string:playerName>")
-@login_required
 def vote(playerName):
    
 
    pass   #vote the player out if townie 
 
 @app.route("/townie/votable")
-@login_required
 def votablelist():
    return dumps( { 'votable' : votable() })
 
 @app.route("/position" ,methods=["POST"])
-@login_required
 def postPosition():
    pass #post the lat & long from the client
 
@@ -486,7 +443,6 @@ def synopsis():
    #get synopsis/highscore list
 
 @app.route("/townie/kills")
-@login_required
 def kills():
    pass #returns list of the last night's kills.
 
@@ -494,14 +450,13 @@ def kills():
 @login_required
 def logout():
     logout_user()
-    return redirect("/login_required")
+    return redirect(somewhere)
 #Check that the client has admin priveleges
 
 @app.route("/newgame")
-@login_required
 def instantiate_game():
-   
-   return new_game()
+   newgame()
+   return dumps( { "result" : "success" } )
 #allow admin to create a new game from a user bank.
 
 @app.route("/nodb")
@@ -521,18 +476,21 @@ def getuser(username):
    return dumps ( {'user' : game.users.find_one( {"name" : username} ) } )
 
 @app.route("/debug")
-@login_required
 def debug():
    return dumps ( {'Night' : game.night, 'counter' : game.counter })
 
 @app.route("/switch")
-@login_required
 def switch():
    if game.night:
       startday()
    else:
       startnight()
    return dumps ( {'Night' : game.night, 'counter' : game.counter })
+
+@app.route("/test")
+def bad():
+   game.users.find()
+   return "bad?"
 
 game = Game()
 
@@ -543,6 +501,16 @@ if __name__ == "__main__":
 #teardown_appcontext(error=None):
 
 
+
+'''
+running = False
+db_up = False
+players = users = kills = db = None
+instantiate_db()
+usercount = playercount = 0
+'''
+'''
+'''
 # print list( game.users.find())
 
 logging.basicConfig(filename='example.log',level=logging.DEBUG)
