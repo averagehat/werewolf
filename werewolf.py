@@ -105,10 +105,10 @@ def isadmin(playername):
 def kills():
    # return the last night's kills
    if game.night:
-      return dumps ( { 'kills' : {} } )
+      return dumps ( { 'kills' : '' } )
    
    else:
-      return dumps ( list ( game.kills.find() ) ) 
+      return dumps ( { 'kills' :  list ( game.kills.find() ) }) 
 
 
 def startday():
@@ -332,13 +332,6 @@ def isadmin(playername):
    print 'userdict' + str(userdict)
    return userdict['admin']
 
-def kills():
-   # return the last night's kills
-   if game.night:
-      return dumps ( { 'kills' : {} } )
-   
-   else:
-      return dumps ( list ( game.kills.find() ) ) 
 
 
 def startday():
@@ -504,7 +497,6 @@ def add_user0(username, password, iswerewolf):
    add_user(username,  hashpassword(username + password), iswerewolf )
 
 def newgame():
-   print 'in newgame()'
    #we do this @ the bottom now
    #game.instantiate_db()
 
@@ -515,7 +507,7 @@ def newgame():
 
    positionthread = Thread(target = checkpositions, args=[])
    positionthread.start()
-   print 'past thread'
+   print 'threads started'
    usercount = playercount = 0
 
    add_user0("mike", ("1234"), True)
@@ -537,38 +529,7 @@ def newgame():
       count += 1
    pass
 
-#return the player that is the current client.
-def thisplayer():
-   return None
 
-class Player:
-
-   def __init__(self, userID, werewolf):
-      self.userid = userID
-      self.werewolf = werewolf
-      self.alive = true
-
-   def __init__(self):
-      self.id = None
-      self.name = None
-      self.userid = None
-      self.location = None
-      self.werewolf = False
-      self.alive = True
-
-
-
-class BasicPlayer:
-   #To be passed to the client, gutted of sensitive info.
-
-   def __init__(self):
-      self.name = None
-      self.alive = None
-      pass
-
-   def __init__(playerObj):
-      self.name = playerObj.name
-      self.alive = playerObl.alive
 
 def new_game():
    print game.currentuser
@@ -645,28 +606,24 @@ def kills():
 @app.route("/logout")
 @login_required
 def logout():
-    game.currentuser = None
-    return ""
-   # logout_user()
+   # logout_user()   is required, can't find the module for it
+   return ''
 
-#Check that the client has admin priveleges
 
 @app.route("/newgame")
 @login_required
 def instantiate_game():
-   
    return new_game()
 #allow admin to create a new game from a user bank.
 
-@app.route("/nodb")
-def nodb():
-   return "nodb\n"
 
 @app.route("/debugplayers")
+@login_required
 def debugplayers():
    return dumps( { 'players' : list( game.players.find() ) } )
 
 @app.route("/debugusers")
+@login_required
 def debugusers():
    return dumps( { 'users' : list( game.users.find() ) } )
 
