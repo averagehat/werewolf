@@ -559,7 +559,7 @@ def smell():
    return dumps ( smell() )
  #  return dumps ( {'response' : "login successful\n" } )
 
-@app.route("/werewolf/kill/<string:victim>", methods=["DELETE"})
+@app.route("/werewolf/kill/<string:victim>", methods=["DELETE"])
 @login_required
 def akill(victim):
 
