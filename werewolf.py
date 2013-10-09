@@ -63,7 +63,18 @@ class Game():
 
    def instantiate_db(self):
       self.running = True
-      self.client = MongoClient()
+      ###############
+      ############### solution below from:
+      ##############http://stackoverflow.com/questions/8859532/how-can-i-use-the-mongolab-add-on-to-heroku-from-python
+      ###############
+      ###############
+      client = MongoClient(os.environ['MONGOLAB_URI'])
+      self.client = client.get_default_database()
+      ##############
+      #############
+      ############old code below
+      ###########
+      #self.client = MongoClient()
       self.db = self.client.werewolf_db
       db = Connection().geo_example
       db.places.create_index([("loc", GEO2D)])
