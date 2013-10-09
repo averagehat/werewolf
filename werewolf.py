@@ -40,9 +40,10 @@ HEROKU = True
 app = Flask(__name__)
 daynightthread = positionthread = None
 
-# Customizable globals! Currently, everything happens very quickly, and the players die within 10 seconds.
+# Customizable globals! Currently, everything happens very quickly, except the position request, so that players don't die within 10 seconds.
 _smellrange = _daylength = 20
 _killrange = _positionfrequency = 5
+_positionfrequency = 10000
 
 
 # game object holds all of our 'globals,' currently without any methods.
@@ -558,7 +559,7 @@ def smell():
    return dumps ( smell() )
  #  return dumps ( {'response' : "login successful\n" } )
 
-@app.route("/werewolf/kill/<string:victim>")
+@app.route("/werewolf/kill/<string:victim>", methods=["DELETE"})
 @login_required
 def akill(victim):
 
@@ -608,8 +609,23 @@ def logout():
    # logout_user()   is required, can't find the module for it
    return ''
 
+@app.route("/register", methods=["POST"])
+def register():
+   if not request.json or not 'username' in request.json or not 'password' in request.json:
+      abort(400)
+  # user = User(request.json['username'], hashpassword(request.json['username'] + request.json['password']), id0=0, isadmin=False)
+   jname = unicode(str(request.json['username']), 'latin1')
+   jpassword = unicode(str(request.json['password']), 'latin1')
+   if game.users.find_one( {'name' : jname, 'password' : hashpassword(jname + jpassword) }):
+      return dumps( { "result" : "failed" })
+   else:
+      game.currentuser = jname
+      add_user0(jname, jpassword, False)
+      return dumps( { "result" : "success!"})
+    #user = game.users.find_one( {'username' : form.username.data} )
+    #return "yo there"
 
-@app.route("/newgame")
+@app.route("/newgame", methods=["POST"])
 @login_required
 def instantiate_game():
    return new_game()
