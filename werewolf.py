@@ -196,8 +196,8 @@ def iswerewolf(playerName):
 def isalive(playerName):
    return game.players.find_one( {"name" : playerName} )['alive']
 
-def postposition(long, lat):
-   game.players.update( {"username" : game.currentuser }, {"$set" : {"loc" : [longitude, latitude]} } )
+def postposition(lon, lat):
+   game.players.update( {"username" : game.currentuser }, {"$set" : {"loc" : [lon, lat]} } )
 
 # returns True if kill succeeds.
 def kill(victimName):
