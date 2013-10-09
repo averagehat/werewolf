@@ -72,7 +72,7 @@ class Game():
       if HEROKU:
          client = MongoClient(os.environ['MONGOLAB_URI'])
          self.db = client.get_default_database()
-         db = Connection(app.config['MONGODB_CONNSTRING'])
+         db = Connection(app.config[os.environ['MONGOLAB_URI'])
       else:
          self.client = MongoClient()
          self.db = self.client.werewolf_db
