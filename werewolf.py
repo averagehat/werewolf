@@ -33,7 +33,7 @@ TODO:
 # yes, because you can't start a new game without an admin.
 withusers = True
 
-HEROKU = False
+HEROKU = True
 #HEROKU = not( os.environ.get('HEROKU') is None )
 
 #auth = HTTPBasicAuth()
