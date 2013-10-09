@@ -591,7 +591,7 @@ def postPosition():
       abort(400)
   # user = User(request.json['username'], hashpassword(request.json['username'] + request.json['password']), id0=0, isadmin=False)
    else:
-      return dumps (postposition(json['longitude'], json['latitude']) )
+      return dumps (postposition(request.json['longitude'], request.json['latitude']) )
 
 @app.route("/synopsis")
 def synopsis():

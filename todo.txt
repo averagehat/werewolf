@@ -1,2 +1,4 @@
+Fix authentication.  use auth.login and re-define their decorators?
+
 I have to properly install via pip all the stuff that's imported in my 
 werewolf.py so I can do the freeze properly.
