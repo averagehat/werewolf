@@ -73,8 +73,9 @@ class Game():
          client = MongoClient(os.environ['MONGOLAB_URI'])
          self.db = client.get_default_database()
      #    con = Connection(os.environ['MONGOLAB_URI'])
-     #    db = con.geo_example
-         self.players = self.db.players
+         db = client.geo_example
+         db.places.create_index([("loc", GEO2D)])
+         self.players = db.players
       else:
          self.client = MongoClient()
          self.db = self.client.werewolf_db
