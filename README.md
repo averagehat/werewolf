@@ -11,7 +11,9 @@ http://mike-werewolf.herokuapp.com/
 
 You need to post correct login data to /login first. See the test/tests.sh file for an example.
 Better log in as an administrator so you can create the game. Current admin:
+
 username : mike
+
 password : 1234
 
 Then, post to /newgame in order instantiate a new game instance.
