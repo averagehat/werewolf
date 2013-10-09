@@ -33,7 +33,7 @@ TODO:
 # yes, because you can't start a new game without an admin.
 withusers = True
 
-HEROKU = True
+HEROKU = False
 #HEROKU = not( os.environ.get('HEROKU') is None )
 
 #auth = HTTPBasicAuth()
@@ -72,7 +72,7 @@ class Game():
       if HEROKU:
          client = MongoClient(os.environ['MONGOLAB_URI'])
          self.db = client.get_default_database()
-         db = Connection([os.environ['MONGOLAB_URI'])
+         db = Connection(os.environ['MONGOLAB_URI'])
       else:
          self.client = MongoClient()
          self.db = self.client.werewolf_db
