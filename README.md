@@ -20,21 +20,21 @@ Then, post to /newgame in order instantiate a new game instance.
 
 GET
 /
-/players
-/townie/votable
-/townie/vote/<playername>
-/werewolf/smell
-/user/<username>
-/debug
-/debugplayers
-/kills
-/synopsis
+/players, 
+/townie/votable, 
+/townie/vote/<playername>, 
+/werewolf/smell, 
+/user/<username>, 
+/debug, 
+/debugplayers, 
+/kills, 
+/synopsis, 
 
 POST
-/position
-/newgame
-/login
-/register
+/position, 
+/newgame, 
+/login, 
+/register, 
 
 DELETE
 /werewolf/kill/<playername>
