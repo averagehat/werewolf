@@ -12,27 +12,31 @@
 
 
 
-{"votable": [{"alive": true, "name": "allevato"}, {"alive": true, "name": "mike"}]}
+{"votable": [{"name": "allevato", "alive": true}, {"name": "mike", "alive": true}]}
 #Attemp to kill, will fail because of distance
 
 {"result": "failure"}
 
 #update position to be close to our victim.
 
-null
-#Attemp to kill, if last request worked, this should work
+"{\"Result\": \"Success\"}"
+#Is it day or night?  
+
+{"days passed": 0, "Night": false}
+
+
+
+#Attemp to kill, if it's daytime, this should work
+
+{"result": "failure"}
+#We paused the bash file, so time should've changed, 
+
+{"days passed": 1, "Night": true}
+
+#Attemp to kill, if it didn't work before, now it should.
 
 {"result": "failure"}
 
 #As admin, we can see secret information about the players
 
-{"players": [{"alive": true, "lastupdate": 0, "kills": 0, "loc": [-1, -1], "image": null, "name": "allevato", "_id": {"$oid": "5255a163814cc60007c97005"}, "werewolf": true, "votesagainst": 0, "votedfor": "", "id": 3}, {"alive": true, "lastupdate": 0, "kills": 0, "loc": [-1, -1], "image": null, "name": "mike", "_id": {"$oid": "5255a163814cc60007c97006"}, "werewolf": false, "votesagainst": 0, "votedfor": "", "id": 1}]}
-
-#Is it day or night?  
-
-{"Night": false, "days passed": 5}
-
-
-#We paused the bash file, so it should be night now, 
-
-{"Night": false, "days passed": 7}
+{"players": [{"lastupdate": 0, "id": 3, "loc": [-1, -1], "_id": {"$oid": "5255a3bd4794290007427b43"}, "votedfor": "", "image": null, "alive": true, "votesagainst": 0, "name": "allevato", "werewolf": true, "kills": 0}, {"lastupdate": 0, "id": 1, "loc": [-1, -1], "_id": {"$oid": "5255a3bd4794290007427b44"}, "votedfor": "", "image": null, "alive": true, "votesagainst": 0, "name": "mike", "werewolf": false, "kills": 0}]}

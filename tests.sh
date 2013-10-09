@@ -48,8 +48,14 @@ echo "" >> testlog.txt
 echo "" >> testlog.txt
 echo "" >> testlog.txt
 
+
+echo "#As admin, we can see secret information about the players" >> testlog.txt
 echo "" >> testlog.txt
-echo "#Attemp to kill, if it's daytime, this should work" >> testlog.txt
+curl   http://mike-werewolf.herokuapp.com/debugplayers | cat >> testlog.txt
+echo "" >> testlog.txt
+
+echo "" >> testlog.txt
+echo "#Attemp to kill, if it's nighttime, and mike is a werewolf, this should work" >> testlog.txt
 echo "" >> testlog.txt
 curl  -X DELETE http://mike-werewolf.herokuapp.com/werewolf/kill/allevato | cat >> testlog.txt
 echo "" >> testlog.txt
@@ -63,7 +69,7 @@ curl   http://mike-werewolf.herokuapp.com/debug | cat >> testlog.txt
 echo "" >> testlog.txt
 
 echo "" >> testlog.txt
-echo "#Attemp to kill, if it didn't work before, now it should." >> testlog.txt
+echo "#Attemp to kill, if it didn't work before, and we're werewolf, now it should." >> testlog.txt
 echo "" >> testlog.txt
 curl  -X DELETE http://mike-werewolf.herokuapp.com/werewolf/kill/allevato | cat >> testlog.txt
 echo "" >> testlog.txt
