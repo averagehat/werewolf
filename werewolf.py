@@ -198,6 +198,7 @@ def isalive(playerName):
 
 def postposition(lon, lat):
    game.players.update( {"username" : game.currentuser }, {"$set" : {"loc" : [lon, lat]} } )
+   return dumps({"Result" : "Success"})
 
 # returns True if kill succeeds.
 def kill(victimName):

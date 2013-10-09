@@ -19,24 +19,20 @@
 
 #update position to be close to our victim.
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<title>500 Internal Server Error</title>
-<h1>Internal Server Error</h1>
-<p>The server encountered an internal error and was unable to complete your request.  Either the server is overloaded or there is an error in the application.</p>
-
+null
 #Attemp to kill, if last request worked, this should work
 
 {"result": "failure"}
 
 #As admin, we can see secret information about the players
 
-{"players": [{"lastupdate": 0, "werewolf": true, "image": null, "votedfor": "", "kills": 0, "id": 3, "votesagainst": 0, "alive": true, "name": "allevato", "_id": {"$oid": "52559fdb07a76e0007f3944d"}, "loc": [-1, -1]}, {"lastupdate": 0, "werewolf": false, "image": null, "votedfor": "", "kills": 0, "id": 1, "votesagainst": 0, "alive": true, "name": "mike", "_id": {"$oid": "52559fdb07a76e0007f3944e"}, "loc": [-1, -1]}]}
+{"players": [{"alive": true, "lastupdate": 0, "kills": 0, "loc": [-1, -1], "image": null, "name": "allevato", "_id": {"$oid": "5255a163814cc60007c97005"}, "werewolf": true, "votesagainst": 0, "votedfor": "", "id": 3}, {"alive": true, "lastupdate": 0, "kills": 0, "loc": [-1, -1], "image": null, "name": "mike", "_id": {"$oid": "5255a163814cc60007c97006"}, "werewolf": false, "votesagainst": 0, "votedfor": "", "id": 1}]}
 
 #Is it day or night?  
 
-{"days passed": 0, "Night": false}
+{"Night": false, "days passed": 5}
 
 
 #We paused the bash file, so it should be night now, 
 
-{"days passed": 1, "Night": true}
+{"Night": false, "days passed": 7}
