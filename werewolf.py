@@ -80,11 +80,12 @@ class Game():
          self.db = self.client.werewolf_db
          db = Connection().geo_example
          db.places.create_index([("loc", GEO2D)])
+         self.players = db.places
 
-      self.players = db.places
       self.users = self.db.users
       self.kills = self.db.kills
       # deleting users this time
+
       self.users.remove()
       self.players.remove()
       self.kills.remove() 
