@@ -68,7 +68,7 @@ class Game():
       ##############http://stackoverflow.com/questions/8859532/how-can-i-use-the-mongolab-add-on-to-heroku-from-python
       ###############
       ###############
-      client = MongoClient(os.environ['MONGOLAB_URI'])
+      client = MongoClient(os.environ['MONGOHQ_URI'])
       self.client = client.get_default_database()
       ##############
       #############
