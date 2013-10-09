@@ -71,10 +71,11 @@ class Game():
       ###############
       if HEROKU:
          client = MongoClient(os.environ['MONGOLAB_URI'])
-    #     self.db = client.get_default_database()
+         self.db = client.get_default_database()
       else:
          self.client = MongoClient()
-      self.db = self.client.werewolf_db
+         self.db = self.client.werewolf_db
+
       db = Connection().geo_example
       db.places.create_index([("loc", GEO2D)])
       self.players = db.places
