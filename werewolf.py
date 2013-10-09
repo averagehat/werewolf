@@ -33,7 +33,7 @@ TODO:
 # yes, because you can't start a new game without an admin.
 withusers = True
 
-
+HEROKU = not( os.environ.get('HEROKU') is None )
 
 #auth = HTTPBasicAuth()
 app = Flask(__name__)
@@ -68,13 +68,11 @@ class Game():
       ##############http://stackoverflow.com/questions/8859532/how-can-i-use-the-mongolab-add-on-to-heroku-from-python
       ###############
       ###############
-      client = MongoClient(os.environ['MONGOHQ_URI'])
-      self.client = client.get_default_database()
-      ##############
-      #############
-      ############old code below
-      ###########
-      #self.client = MongoClient()
+      if HEROKU:
+         client = MongoClient(os.environ['MONGOLAB_URI'])
+         self.client = client.get_default_database()
+      else:
+         self.client = MongoClient()
       self.db = self.client.werewolf_db
       db = Connection().geo_example
       db.places.create_index([("loc", GEO2D)])
