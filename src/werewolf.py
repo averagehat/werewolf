@@ -1,45 +1,54 @@
 #!~/virtualenv-1.10/myVE/bin/python
-from functools import wraps
-from flask import g, request, redirect, url_for
-import hashlib
-from threading import Thread
-from pymongo import Connection, GEO2D
-from random import shuffle
-from flask import Flask, jsonify
-from flask import make_response
-from flask import *
-import forms
-from forms import LoginForm
-import os
-import pymongo
-from pymongo import MongoClient
-import logging
-import time
 
+# all of the modules!
+from functools import wraps ; from flask import g, request, redirect, url_for
+import hashlib ; from threading import Thread
+from pymongo import Connection, GEO2D ; from random import shuffle
+from flask import Flask, jsonify ; from flask import make_response ; from flask import *
+import os ; import pymongo ; from pymongo import MongoClient
+import logging ; import time
+
+#some deprecated flask stuff
 from flask.ext.login import UserMixin
-from flask.ext.login import *
-
+from flask.ext.login import * 
 from flask.ext.login import LoginManager
-from flask.ext.login import login_required
-
+from flask.ext.login import login_required 
 from flask.ext.httpauth import HTTPBasicAuth
+
+from bson.json_util import dumps
 import json
 from bson import Binary, Code
-from bson.json_util import dumps
 
-from flask.ext.wtf import Form
-from wtforms import TextField, BooleanField
-from wtforms.validators import Required
 
+'''
+TODO:
+   * Split this up into multiple files
+   * Registration page for new users
+   * Customization widget for the admin
+
+'''
+
+
+#do we want users in the database automatically?
+# yes, because you can't start a new game without an admin.
+withusers = True
+
+HEROKU = True
+#HEROKU = not( os.environ.get('HEROKU') is None )
+
+#auth = HTTPBasicAuth()
 app = Flask(__name__)
-auth = HTTPBasicAuth()
-night = False
 daynightthread = positionthread = None
-#login_manager = LoginManager()
-#login_manager.init_app(app)
+
+# Customizable globals! Currently, everything happens very quickly, except the position request, so that players don't die within 10 seconds.
+_smellrange = _daylength = 20
+_killrange = _positionfrequency = 5
+_positionfrequency = 10000
 
 
-
+# game object holds all of our 'globals,' currently without any methods.
+# Globals should be made true variables and scrap the Game object, or else
+# consolidate some of the methods into Game and probably an inner database manager class.
 class Game():
 
    def __init__(self):
@@ -48,25 +57,42 @@ class Game():
       self.running = self.night = False  
       self.currentuser = None
       self.lat = self.lon = -1 #default lat & lon values
-      self.smellrange = 20
-      self.daylength = 20
-      self.positionfrequency = 5
+      self.smellrange = _smellrange
+      self.daylength = _daylength
+      self.positionfrequency = _positionfrequency
+      self.killrange = _killrange
       self.sudo = 'sudo'
 
    def instantiate_db(self):
       self.running = True
-      self.client = MongoClient()
-      self.db = self.client.werewolf_db
-      db = Connection().geo_example
-      db.places.create_index([("loc", GEO2D)])
-      self.players = db.places
+      ###############
+      ############### solution below from:
+      ##############http://stackoverflow.com/questions/8859532/how-can-i-use-the-mongolab-add-on-to-heroku-from-python
+      ###############
+      ###############
+      if HEROKU:
+         client = MongoClient(os.environ['MONGOLAB_URI'])
+         self.db = client.get_default_database()
+     #    con = Connection(os.environ['MONGOLAB_URI'])
+     #    db = client.geo_example
+         self.db.places.create_index([("loc", GEO2D)])
+         self.players = self.db.places
+      else:
+         self.client = MongoClient()
+         self.db = self.client.werewolf_db
+         db = Connection().geo_example
+         db.places.create_index([("loc", GEO2D)])
+         self.players = db.places
+
       self.users = self.db.users
       self.kills = self.db.kills
       # deleting users this time
+
       self.users.remove()
       self.players.remove()
       self.kills.remove() 
-      add_user0("mike", ("1234"), True)
+      if withusers:
+         add_user0("mike", ("1234"), True)
 
       self.db_up = True
     #  game.users.insert( {"name" : self.sudo, "password" : hashpassword(self.sudo) , "id" : self.usercount, "admin" : True })
@@ -74,81 +100,8 @@ class Game():
 
 
 
-class User():
-   def __init__(self, username, hashedpass, id0, isadmin, active=True, password=None):
-      self.username = username
-      self.hashedpass = hashedpass 
-      self.isadmin = isadmin
-      self.id0 = id0
-      self.password = password
-
-   def isadmin(self):
-      return self.isadmin
-
-   def is_authenticated(self):
-      return True
-
-   def is_active(self):
-      return self.is_authenticated()
-
-   def is_anonymous(self):
-      return False
-
-   def get_id(self):
-      return self.id0
-
-   def validpassword(self, password):
-      return checkpassword(password, self.password)
-
-@app.route("/login", methods=["POST"])
-def login():
-   if not request.json or not 'username' in request.json or not 'password' in request.json:
-      abort(400)
-  # user = User(request.json['username'], hashpassword(request.json['username'] + request.json['password']), id0=0, isadmin=False)
-   print request.json['username']
-   print request.json['password']
-   jname = unicode(str(request.json['username']), 'latin1')
-   jpassword = unicode(str(request.json['password']), 'latin1')
-   print 'at if'
-   if game.users.find_one( {'name' : jname, 'password' : hashpassword(jname + jpassword) }):
-      print 'in if'
-      game.currentuser = jname
-      return dumps( {'result' : 'login successful!' })
-   else:
-      game.currentuser = None
-      return dumps( { "result" : "failed" })
-    #user = game.users.find_one( {'username' : form.username.data} )
-    #return "yo there"
-   
-   ''' 
-    if form.validate_on_submit():
-        # login and validate the user...
-
-       if user is not None and user.valid_password(form.password.data):
-           login_user(user, remember=True)
-           flash("Logged in successfully.")
-           return redirect(request.args.get("next") or url_for("index"))
-       
-       else:
-          flash('Wrong username or password!', 'error')
-
-    return render_template("login.html", form=form)  
-   '''
-def load_user(userid):
-   u = game.users.find_one( {"id" : userid })
-   return User(u['name'], userid, u['admin'], active=True)
-
-##########
-
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if game.currentuser is None:
-            return nologin()# redirect('login')#      url_for('login', next=request.url))
-        return f(*args, **kwargs)
-    return decorated_function
-
+'''
+#DEPRECATED 
 @auth.get_password
 def get_password(username):
 
@@ -158,6 +111,7 @@ def get_password(username):
 def unauthorized():
 
     return make_response(jsonify( { 'error': 'Unauthorized access' } ), 401)
+'''
 
 
 def isadmin(playername):
@@ -168,25 +122,27 @@ def isadmin(playername):
 
 def kills():
    # return the last night's kills
+   if not game.running:
+      return dumps ( { 'kills' : 'game not started yet,' } )
    if game.night:
-      return dumps ( { 'kills' : {} } )
+      return dumps ( { 'kills' : 'townspeople are not notified until morning!' } )
    
    else:
-      return dumps ( list ( game.kills.find() ) ) 
+      if game.kills:
+         return dumps ( { 'kills' :  list ( game.kills.find() ) }) 
+      else:
+         return dumps ( {'kills' : 'everyone survived . . . last night.' } )
 
 
 def startday():
    game.night = False
-   
    poll()  #kill the voted-out player
-   #notify the players about the kills?
    
 
 def startnight():
    game.night = True
    game.kills.remove() #remove the last night's kills from the database
    
-
 
 def maintain():
    #game starts out as daytime
@@ -240,6 +196,9 @@ def iswerewolf(playerName):
 def isalive(playerName):
    return game.players.find_one( {"name" : playerName} )['alive']
 
+def postposition(lon, lat):
+   game.players.update( {"username" : game.currentuser }, {"$set" : {"loc" : [lon, lat]} } )
+   return dumps({"Result" : "Success"})
 
 # returns True if kill succeeds.
 def kill(victimName):
@@ -312,12 +271,6 @@ def poll():
 
 
       #info should include stuff like method, killer
-def dokill(victimname, info={}):
-   game.players.update( {'name' : victimname},{'$set' : { 'alive' : False } }  )
-   killdict = {'victim' : victimname}
-   killdict.update(info)
-   game.kills.insert( {killdict} )
-         
 def gamesummary():
    if game.running:
       return "Game summary available only when game is finished."
@@ -328,12 +281,7 @@ def gamesummary():
          playerstats.append( { "name" : player['name'], 
             'kills' : player['kills'],  'alive' : player['alive'] })
       return playerstats
-   
-def load_user(userid):
-   u = game.users.find_one( {"id" : userid })
-   return User(u['name'], userid, u['admin'], active=True)
 
-##########
 
 
 def login_required(f):
@@ -344,15 +292,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@auth.get_password
-def get_password(username):
-
-    return getpassword(username)
-
-@auth.error_handler
-def unauthorized():
-
-    return make_response(jsonify( { 'error': 'Unauthorized access' } ), 401)
 
 
 def startnight():
@@ -362,18 +301,9 @@ def startnight():
    #do all the overnight stuff, that actually happens right before another day starts.
 
 def isadmin(playername):
-   print 'in begin of isadmin'
    userdict = game.users.find_one( {"name" : playername } )
-   print 'userdict' + str(userdict)
    return userdict['admin']
 
-def kills():
-   # return the last night's kills
-   if game.night:
-      return dumps ( { 'kills' : {} } )
-   
-   else:
-      return dumps ( list ( game.kills.find() ) ) 
 
 
 def startday():
@@ -381,19 +311,6 @@ def startday():
    poll()  #kill the voted-out player
    #notify the players about the kills?
    
-
-def maintain():
-   #game starts out as daytime
-   while game.running:
-      #should check every few minutes for the last time players updated their location.
-      
-      time.sleep(game.daylength)
-      game.counter += 1
-      startnight()
-      print "night started"
-      time.sleep(game.daylength)
-      startday()
-      print "day started"
 
 def nologin(): 
    return dumps ( { "result" : "You are not logged on. Please post login info to /login"} )
@@ -506,31 +423,18 @@ def poll():
 
       #info should include stuff like method, killer
 def dokill(victimname, method):
-   game.players.update( {'name' : victimname, 'alive' : False } )
+   game.players.update( {'name' : victimname}, { "$set" : {'alive' : False } } )
    game.kills.insert( {'victim' : victimname, 'method' : method} )
-         
-def gamesummary():
-   if game.running:
-      return "Game summary available only when game is finished."
-   
-   else:
-
-      playerstats = []
-      for player in game.players.find():
-         playerstats.append( { "name" : player['name'], 
-            'kills' : player['kills'],  'alive' : player['alive']})
-      return playerstats
-
 
 # assume that votes got cleared out after last vote
 # return True if vote succeeded.
-def vote(voter, target):
+def vote(target):
    
    if isalive(target) and not iswerewolf(game.currentuser) and game.night :
-      game.players.update( {'name' : voter }, {"$set" : {"votedfor" : target} } )
+      game.players.update( {'name' : game.currentuser }, {"$set" : {"votedfor" : target} } )
       game.players.update( {'name' : target }, {"$inc" : {"votesagainst" : 1 } } )
       return dumps( {'result' : 'success'} )
-   return dumps( {'result' : 'success'} ) 
+   return dumps( {'result' : 'failure'} ) 
 
 
 def votable():
@@ -551,11 +455,11 @@ def insertplayer(userid, username, werewolf):
 def checkpositions():
    while game.running:
       print "Checking for player updates . . . "
-      for player in game.players.find():
+      for player in game.players.find({"alive" : True}):
          lastupdate = player['lastupdate']
          if ( game.updatecounter - lastupdate) > 1:
             # kick that player out of the game, and alert the user
-           dokill(player['name'], 'timed out'} )
+           dokill(player['name'], 'timed out' )
       time.sleep(game.positionfrequency)
       game.updatecounter += 1
 
@@ -565,10 +469,6 @@ def add_user0(username, password, iswerewolf):
    add_user(username,  hashpassword(username + password), iswerewolf )
 
 def newgame():
-   print 'in newgame()'
-   #we do this @ the bottom now
-   #game.instantiate_db()
-
 
    #clear out the players and kills collections
    daynightthread = Thread(target=maintain)
@@ -576,12 +476,13 @@ def newgame():
 
    positionthread = Thread(target = checkpositions, args=[])
    positionthread.start()
-   print 'past thread'
+   print 'threads started'
    usercount = playercount = 0
 
-   add_user0("mike", ("1234"), True)
-   add_user0("allevato", ("allevato"), False)
-   print 'users added'
+
+   if withusers:
+      add_user0("allevato", ("allevato"), False)
+      print 'users added'
    count = 0
    users = list(game.users.find())
    shuffle(users)
@@ -598,47 +499,48 @@ def newgame():
       count += 1
    pass
 
-#return the player that is the current client.
-def thisplayer():
-   return None
-
-class Player:
-
-   def __init__(self, userID, werewolf):
-      self.userid = userID
-      self.werewolf = werewolf
-      self.alive = true
-
-   def __init__(self):
-      self.id = None
-      self.name = None
-      self.userid = None
-      self.location = None
-      self.werewolf = False
-      self.alive = True
-
-
-
-class BasicPlayer:
-   #To be passed to the client, gutted of sensitive info.
-
-   def __init__(self):
-      self.name = None
-      self.alive = None
-      pass
-
-   def __init__(playerObj):
-      self.name = playerObj.name
-      self.alive = playerObl.alive
 
 def new_game():
-   print game.currentuser
    if isadmin(game.currentuser):
-      print 'past isadmin'
       newgame()
       return dumps( {"result" : "Game Created!" } )
    else:
       return dumps( {"result" : "you must be an admin to create a new game! for shame!"} )
+
+
+################
+''' ROUTING '''
+################
+
+
+#define our authentication decorator.
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if game.currentuser is None:
+            return nologin()# redirect('login')#      url_for('login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route("/login", methods=["POST"])
+def login():
+   if not request.json or not 'username' in request.json or not 'password' in request.json:
+      abort(400)
+  # user = User(request.json['username'], hashpassword(request.json['username'] + request.json['password']), id0=0, isadmin=False)
+   jname = unicode(str(request.json['username']), 'latin1')
+   jpassword = unicode(str(request.json['password']), 'latin1')
+   if game.users.find_one( {'name' : jname, 'password' : hashpassword(jname + jpassword) }):
+      game.currentuser = jname
+      return dumps( {'result' : 'login successful!' })
+   else:
+      game.currentuser = None
+      return dumps( { "result" : "failed" })
+    #user = game.users.find_one( {'username' : form.username.data} )
+    #return "yo there"
+   
+def load_user(userid):
+   u = game.users.find_one( {"id" : userid })
+   return User(u['name'], userid, u['admin'], active=True)
 
 @app.route("/login_required")
 def loginrequired():
@@ -660,7 +562,7 @@ def smell():
    return dumps ( smell() )
  #  return dumps ( {'response' : "login successful\n" } )
 
-@app.route("/werewolf/kill/<string:victim>")
+@app.route("/werewolf/kill/<string:victim>", methods=["DELETE"])
 @login_required
 def akill(victim):
 
@@ -690,7 +592,7 @@ def postPosition():
       abort(400)
   # user = User(request.json['username'], hashpassword(request.json['username'] + request.json['password']), id0=0, isadmin=False)
    else:
-      return dumps (postposition(json['longitude'], json['latitude']) )
+      return dumps (postposition(request.json['longitude'], request.json['latitude']) )
 
 @app.route("/synopsis")
 def synopsis():
@@ -699,35 +601,47 @@ def synopsis():
 
 @app.route("/kills")
 @login_required
-def kills():
+def kills0():
+   print 'in kills0 routing'
    return kills()
    #returns list of the last night's kills.
 
 @app.route("/logout")
 @login_required
 def logout():
-    game.currentuser = None
-    return ""
-   # logout_user()
+   # logout_user()   is required, can't find the module for it
+   return ''
 
-#Check that the client has admin priveleges
+@app.route("/register", methods=["POST"])
+def register():
+   if not request.json or not 'username' in request.json or not 'password' in request.json:
+      abort(400)
+  # user = User(request.json['username'], hashpassword(request.json['username'] + request.json['password']), id0=0, isadmin=False)
+   jname = unicode(str(request.json['username']), 'latin1')
+   jpassword = unicode(str(request.json['password']), 'latin1')
+   if game.users.find_one( {'name' : jname, 'password' : hashpassword(jname + jpassword) }):
+      return dumps( { "result" : "failed" })
+   else:
+      game.currentuser = jname
+      add_user0(jname, jpassword, False)
+      return dumps( { "result" : "success!"})
+    #user = game.users.find_one( {'username' : form.username.data} )
+    #return "yo there"
 
-@app.route("/newgame")
+@app.route("/newgame", methods=["POST"])
 @login_required
 def instantiate_game():
-   
    return new_game()
 #allow admin to create a new game from a user bank.
 
-@app.route("/nodb")
-def nodb():
-   return "nodb\n"
 
 @app.route("/debugplayers")
+@login_required
 def debugplayers():
    return dumps( { 'players' : list( game.players.find() ) } )
 
 @app.route("/debugusers")
+@login_required
 def debugusers():
    return dumps( { 'users' : list( game.users.find() ) } )
 
