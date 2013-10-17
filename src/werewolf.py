@@ -12,7 +12,7 @@ import logging ; import time
 from flask.ext.login import UserMixin
 from flask.ext.login import * 
 from flask.ext.login import LoginManager
-from flask.ext.login import login_required 
+from flask.ext.login # import login_required 
 from flask.ext.httpauth import HTTPBasicAuth
 
 from bson.json_util import dumps
@@ -112,6 +112,24 @@ def unauthorized():
 
     return make_response(jsonify( { 'error': 'Unauthorized access' } ), 401)
 '''
+
+# From:     http://flask.pocoo.org/snippets/8/
+def check_auth(username, password):
+   return username  'admin' and password == 'secret'
+
+
+def authenticate():
+   return dumps({'WWW-Authenticate': 'Basic realm="Login Required"'})
+
+def login_required(f):
+   @wraps(f)
+   def decoarted(*args, **kwargs):
+      auth = request.authorization
+      if not auth or not check_auth(auth.username, auth.password):
+         return authenticate()
+      return f(*args, **kwargs)
+   return decorated
+
 
 
 def isadmin(playername):
