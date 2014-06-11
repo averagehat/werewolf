@@ -3,6 +3,7 @@ werewolf
 
 werewolf web service project for CSCI 420 @ W&amp;M
 
+This is the Web Service portion of a RESTful app designed for Android; The android code is unposted.
 
 This app is available to play at:
 
